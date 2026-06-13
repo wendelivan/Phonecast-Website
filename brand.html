@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}phonecast — {{ brand_name }} Details{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1><i class="bi bi-phone"></i> {{ brand_name }} Analysis</h1>
+            <p>Detailed Holt-Winters model parameters, forecast, components, and accuracy metrics</p>
+        </div>
+        <div>
+            <div class="dropdown">
+                <button class="btn btn-pc-secondary dropdown-toggle" type="button" id="brandDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Switch Brand
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="brandDropdown">
+                    {% for b in brands %}
+                    <li><a class="dropdown-item {% if b == brand_name %}active{% endif %}" href="{{ url_for('brand_detail', brand_name=b) }}">{{ b }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Parameter and Accuracy Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Parameters -->
+        <div class="col-lg-6">
+            <div class="pc-card h-100">
+                <div class="card-body">
+                    <h3 class="mb-3 text-primary"><i class="bi bi-sliders"></i> Model Smoothing Parameters</h3>
+                    <div class="metrics-panel">
+                        {% set first_row = brand_df.iloc[0] %}
+                        <div class="metric-box">
+                            <div class="metric-label">Alpha (α)</div>
+                            <div class="metric-value">{{ "%.4f"|format(first_row['Alpha']) }}</div>
+                            <div class="small text-muted mt-1">Level Smoothing</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">Beta (β)</div>
+                            <div class="metric-value">{{ "%.4f"|format(first_row['Beta']) }}</div>
+                            <div class="small text-muted mt-1">Trend Smoothing</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">Gamma (γ)</div>
+                            <div class="metric-value">{{ "%.4f"|format(first_row['Gamma']) }}</div>
+                            <div class="small text-muted mt-1">Seasonal Smoothing</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accuracy Metrics -->
+        <div class="col-lg-6">
+            <div class="pc-card h-100">
+                <div class="card-body">
+                    <h3 class="mb-3 text-primary"><i class="bi bi-shield-check"></i> Model Fitting Accuracy</h3>
+                    <div class="metrics-panel">
+                        <div class="metric-box">
+                            <div class="metric-label">MAPE</div>
+                            <div class="metric-value">
+                                <span class="mape-badge {{ mape_category }}">
+                                    {{ "%.2f"|format(accuracy.MAPE) }}%
+                                </span>
+                            </div>
+                            <div class="small text-muted mt-1">Mean Abs. % Error</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">MAD</div>
+                            <div class="metric-value">{{ "{:,.2f}".format(accuracy.MAD) }}</div>
+                            <div class="small text-muted mt-1">Mean Abs. Deviation</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">RMSE</div>
+                            <div class="metric-value">{{ "{:,.2f}".format(accuracy.RMSE) }}</div>
+                            <div class="small text-muted mt-1">Root Mean Sq. Error</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1: Historical vs Fitted & Forecast -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <div class="chart-title"><i class="bi bi-graph-up"></i> Historical vs. Fitted Values</div>
+                <div id="hist-fitted-chart" style="width:100%; min-height:350px;"></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <div class="chart-title"><i class="bi bi-graph-up-arrow"></i> Sales Forecast (Next 4 Quarters)</div>
+                <div id="forecast-chart" style="width:100%; min-height:350px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2: Components (Level, Trend, Seasonal) -->
+    <div class="chart-container mb-4">
+        <div class="chart-title"><i class="bi bi-activity"></i> Holt-Winters Equation Components</div>
+        <div class="row g-3">
+            <div class="col-lg-4">
+                <div id="level-chart" style="width:100%; min-height:280px;"></div>
+            </div>
+            <div class="col-lg-4">
+                <div id="trend-chart" style="width:100%; min-height:280px;"></div>
+            </div>
+            <div class="col-lg-4">
+                <div id="seasonal-chart" style="width:100%; min-height:280px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Tables -->
+    <div class="row g-4">
+        <!-- Historical Data Table -->
+        <div class="col-lg-7">
+            <div class="pc-card">
+                <div class="card-body">
+                    <h3 class="mb-3"><i class="bi bi-table"></i> Historical Processing Details</h3>
+                    <div class="table-scroll" style="max-height: 400px; overflow-y: auto;">
+                        <table class="pc-table sortable m-0">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Actual (Yt)</th>
+                                    <th>Fitted (Ft)</th>
+                                    <th>Level (Lt)</th>
+                                    <th>Trend (bt)</th>
+                                    <th>Season (St)</th>
+                                    <th>Abs % Error</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for idx, row in brand_df.iterrows() %}
+                                {% set period = "%d Q%d"|format(row.Year|int, row.Quarter|int) %}
+                                {% set pe = ((row.Yt - row.Ft)|abs / row.Yt * 100) if row.Yt != 0 else 0 %}
+                                <tr>
+                                    <td><strong>{{ period }}</strong></td>
+                                    <td>{{ "{:,.2f}".format(row.Yt) }}</td>
+                                    <td>{{ "{:,.2f}".format(row.Ft) }}</td>
+                                    <td>{{ "{:,.2f}".format(row.Lt) }}</td>
+                                    <td>{{ "{:,.2f}".format(row.bt) }}</td>
+                                    <td>{{ "%.4f"|format(row.St) }}</td>
+                                    <td>{{ "%.2f"|format(pe) }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forecast Data Table -->
+        <div class="col-lg-5">
+            <div class="pc-card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h3 class="mb-3"><i class="bi bi-calendar-check"></i> Forecast Output</h3>
+                    <div class="table-scroll flex-grow-1">
+                        <table class="pc-table m-0">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Year</th>
+                                    <th>Quarter</th>
+                                    <th>Forecasted Sales (Ft+m)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for idx, row in forecast_df.iterrows() %}
+                                <tr class="highlight-row">
+                                    <td><strong>{{ row.Period }}</strong></td>
+                                    <td>{{ row.Year|int }}</td>
+                                    <td>{{ row.Quarter|int }}</td>
+                                    <td>{{ "{:,.2f}".format(row.Ft_m) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        renderPlotlyChart('hist-fitted-chart', '{{ hist_fitted_chart | safe }}');
+        renderPlotlyChart('forecast-chart', '{{ forecast_chart | safe }}');
+        renderPlotlyChart('level-chart', '{{ level_chart | safe }}');
+        renderPlotlyChart('trend-chart', '{{ trend_chart | safe }}');
+        renderPlotlyChart('seasonal-chart', '{{ seasonal_chart | safe }}');
+    });
+</script>
+{% endblock %}

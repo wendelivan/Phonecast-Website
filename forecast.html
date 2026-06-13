@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}phonecast — Forecast Explorer{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1><i class="bi bi-graph-up-arrow"></i> Forecast Explorer</h1>
+        <p>Dynamically project and compare future smartphone sales for multiple brands</p>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="forecast-controls mb-4">
+        <div class="row g-4">
+            <!-- Horizon Slider -->
+            <div class="col-lg-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label for="forecast-slider"><i class="bi bi-calendar-event"></i> Forecast Horizon</label>
+                    <span class="range-value" id="forecast-value">4</span>
+                </div>
+                <input type="range" class="form-range" id="forecast-slider" min="1" max="12" value="4">
+                <div class="d-flex justify-content-between small text-muted">
+                    <span>1 Quarter</span>
+                    <span>12 Quarters (3 Years)</span>
+                </div>
+            </div>
+
+            <!-- Brand Checklist -->
+            <div class="col-lg-8">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label><i class="bi bi-tags"></i> Select Brands</label>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="select-all-brands">Select All</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="deselect-all-brands">Deselect All</button>
+                    </div>
+                </div>
+                <div class="brand-checklist">
+                    {% for brand in brands %}
+                    <label>
+                        <input type="checkbox" class="brand-checkbox" value="{{ brand }}" checked>
+                        <span>{{ brand }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+            <button type="button" class="btn btn-pc-secondary" id="export-forecast-csv">
+                <i class="bi bi-download"></i> Export to CSV
+            </button>
+            <button type="button" class="btn btn-pc-primary" id="update-forecast">
+                <i class="bi bi-arrow-clockwise"></i> Update Forecast
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Results Row -->
+    <div class="row g-4">
+        <!-- Chart -->
+        <div class="col-lg-12">
+            <div class="chart-container">
+                <div class="chart-title"><i class="bi bi-graph-up"></i> Multi-Brand Forecast Comparison</div>
+                <div id="forecast-chart" style="width:100%; min-height:450px;"></div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="col-lg-12">
+            <div class="pc-card">
+                <div class="card-body">
+                    <h3 class="mb-3"><i class="bi bi-table"></i> Projected Sales Table</h3>
+                    <div class="table-scroll">
+                        <table class="pc-table">
+                            <thead id="forecast-table-head">
+                                <tr>
+                                    <th>Period</th>
+                                    {% for brand in brands %}
+                                    <th>{{ brand }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody id="forecast-table-body">
+                                <!-- Populated dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initial load
+        var updateBtn = document.getElementById('update-forecast');
+        if (updateBtn) {
+            updateBtn.click();
+        }
+    });
+</script>
+{% endblock %}
