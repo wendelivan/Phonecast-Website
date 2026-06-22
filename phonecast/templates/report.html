@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}phonecast — Report Center{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1><i class="bi bi-file-earmark-bar-graph"></i> Report Center</h1>
+        <p>Export your forecasting analysis and data in publication-ready formats</p>
+    </div>
+
+    <!-- Export Grid -->
+    <div class="row g-4 mb-4 justify-content-center">
+        <!-- PDF Report Card -->
+        <div class="col-lg-5 col-md-6">
+            <div class="report-card h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="report-icon">
+                        <i class="bi bi-file-pdf"></i>
+                    </div>
+                    <h3>Comprehensive PDF Report</h3>
+                    <p>
+                        Download a publication-quality executive report containing full brand summaries, 
+                        smoothing parameters (α, β, γ), accuracy analysis (MAD, MSE, RMSE, MAPE), 
+                        and quarterly sales forecasts.
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('download_pdf') }}" class="btn btn-pc-primary w-100 justify-content-center">
+                        <i class="bi bi-file-earmark-pdf"></i> Download PDF Report
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- CSV Export Card -->
+        <div class="col-lg-5 col-md-6">
+            <div class="report-card h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="report-icon">
+                        <i class="bi bi-filetype-csv"></i>
+                    </div>
+                    <h3>Complete Data Export (CSV)</h3>
+                    <p>
+                        Download a structured CSV spreadsheet containing the full combined dataset of all brands: 
+                        both historical fitted parameters (level, trend, seasonality) and the new forecasted 
+                        quarters for seamless import into Excel or other analytical tools.
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('download_csv') }}" class="btn btn-pc-secondary w-100 justify-content-center">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Download CSV Data
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Stats Preview -->
+    <div class="pc-card mt-5">
+        <div class="card-body">
+            <h3 class="mb-4"><i class="bi bi-eye"></i> Export Summary Preview</h3>
+            <div class="row g-3">
+                <div class="col-md-3 col-6">
+                    <div class="p-3 bg-light rounded text-center">
+                        <div class="small text-muted mb-1">Brands Included</div>
+                        <h4 class="mb-0 text-primary">{{ processed.total_brands }}</h4>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="p-3 bg-light rounded text-center">
+                        <div class="small text-muted mb-1">Total Data Rows</div>
+                        <h4 class="mb-0 text-primary">{{ processed.total_records }}</h4>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="p-3 bg-light rounded text-center">
+                        <div class="small text-muted mb-1">Forecast Horizon</div>
+                        <h4 class="mb-0 text-primary">4 Quarters</h4>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="p-3 bg-light rounded text-center">
+                        <div class="small text-muted mb-1">Status</div>
+                        <h4 class="mb-0 text-success"><i class="bi bi-check-circle"></i> Ready</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}phonecast — Accuracy Analysis{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1><i class="bi bi-bullseye"></i> Accuracy Analysis</h1>
+        <p>Evaluate and compare the performance of Holt-Winters models across different brands</p>
+    </div>
+
+    <!-- Highlight Cards -->
+    <div class="row g-3 mb-4">
+        <!-- Best Model -->
+        <div class="col-md-6">
+            <div class="pc-card border-success" style="border-left: 5px solid var(--pc-green);">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="card-icon bg-success bg-opacity-10 text-success" style="width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
+                            <i class="bi bi-award"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small text-uppercase fw-bold">Best Performing Model</div>
+                            <h2 class="mb-0 text-success">{{ best_brand }}</h2>
+                            <div class="small mt-1">
+                                Lowest MAPE: <strong>{{ "%.2f"|format(accuracy[best_brand].MAPE) }}%</strong> 
+                                (<span class="text-success fw-bold">Highly Accurate</span>)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Worst Model -->
+        <div class="col-md-6">
+            <div class="pc-card border-danger" style="border-left: 5px solid var(--pc-red);">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="card-icon bg-danger bg-opacity-10 text-danger" style="width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small text-uppercase fw-bold">Least Performing Model</div>
+                            <h2 class="mb-0 text-danger">{{ worst_brand }}</h2>
+                            <div class="small mt-1">
+                                Highest MAPE: <strong>{{ "%.2f"|format(accuracy[worst_brand].MAPE) }}%</strong>
+                                {% if accuracy[worst_brand].MAPE > 20 %}
+                                (<span class="text-danger fw-bold">Needs Review</span>)
+                                {% else %}
+                                (<span class="text-warning fw-bold">Acceptable</span>)
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row g-4 mb-4">
+        <!-- MAPE comparison -->
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <div class="chart-title"><i class="bi bi-percent"></i> MAPE Comparison (%)</div>
+                <div id="mape-chart" style="width:100%; min-height:380px;"></div>
+            </div>
+        </div>
+        <!-- Other metrics comparison -->
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <div class="chart-title"><i class="bi bi-calculator"></i> Error Metrics (MAD &amp; RMSE)</div>
+                <div id="acc-bar-chart" style="width:100%; min-height:380px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accuracy Comparison Table -->
+    <div class="pc-card">
+        <div class="card-body">
+            <h3 class="mb-3"><i class="bi bi-table"></i> Model Performance Table</h3>
+            <div class="table-scroll">
+                <table class="pc-table sortable m-0">
+                    <thead>
+                        <tr>
+                            <th>Brand</th>
+                            <th>MAPE (%)</th>
+                            <th>MAD</th>
+                            <th>MSE</th>
+                            <th>RMSE</th>
+                            <th>Evaluation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for brand, metrics in accuracy.items() %}
+                        <tr>
+                            <td>
+                                <strong>
+                                    <a href="{{ url_for('brand_detail', brand_name=brand) }}">
+                                        <i class="bi bi-box-arrow-up-right me-1"></i> {{ brand }}
+                                    </a>
+                                </strong>
+                            </td>
+                            <td>
+                                <span class="mape-badge {{ metrics.mape_category }}">
+                                    {{ "%.2f"|format(metrics.MAPE) }}%
+                                </span>
+                            </td>
+                            <td>{{ "{:,.2f}".format(metrics.MAD) }}</td>
+                            <td>{{ "{:,.2f}".format(metrics.MSE) }}</td>
+                            <td>{{ "{:,.2f}".format(metrics.RMSE) }}</td>
+                            <td>
+                                {% if metrics.MAPE < 10 %}
+                                <span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Highly Accurate Forecasting</span>
+                                {% elif metrics.MAPE <= 20 %}
+                                <span class="text-warning fw-bold"><i class="bi bi-info-circle-fill"></i> Good Forecasting</span>
+                                {% else %}
+                                <span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> Feasible Forecasting</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Definitions Card -->
+    <div class="pc-card mt-4 bg-light">
+        <div class="card-body">
+            <h4 class="text-primary mb-3"><i class="bi bi-info-square"></i> Forecast Evaluation Criteria (MAPE)</h4>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="p-3 bg-white rounded border">
+                        <span class="mape-badge green mb-2">&lt; 10%</span>
+                        <h5 class="mt-1">Highly Accurate</h5>
+                        <p class="small text-muted mb-0">Model is extremely reliable. Best suited for business forecasting and strategic planning.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-white rounded border">
+                        <span class="mape-badge yellow mb-2">10% - 20%</span>
+                        <h5 class="mt-1">Good Forecasting</h5>
+                        <p class="small text-muted mb-0">Model is reliable with acceptable error levels. Suitable for regular sales estimation.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-white rounded border">
+                        <span class="mape-badge red mb-2">&gt; 20%</span>
+                        <h5 class="mt-1">Feasible/Needs Review</h5>
+                        <p class="small text-muted mb-0">Forecast values contain higher deviations. Interpret predictions with caution.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        renderPlotlyChart('mape-chart', '{{ mape_chart | safe }}');
+        renderPlotlyChart('acc-bar-chart', '{{ acc_bar_chart | safe }}');
+    });
+</script>
+{% endblock %}
